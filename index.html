@@ -243,7 +243,7 @@
         // Базовый URL нашего сервера на Render (замени на свой, когда получишь)
         const API_URL = "https://tarot-server-16jh.onrender.com"; 
 
-        function makeFortune() {
+                function makeFortune() {
             const question = document.getElementById('questionInput').value.trim();
             if (!question) {
                 tg.showAlert("Напишите ваш вопрос.");
@@ -271,12 +271,36 @@
             })
             .then(response => response.json())
             .then(data => {
+                // ВЫВОДИМ ОТВЕТ СЕРВЕРА НА ЭКРАН
+                tg.showAlert("Ответ сервера: " + JSON.stringify(data));
+
                 if (data.status === 'error') {
                     tg.showAlert(data.message);
                     document.getElementById('screen-loading').style.display = 'none';
                     document.getElementById('screen-welcome').style.display = 'flex';
                     return;
                 }
+
+                // Показываем результат
+                document.getElementById('screen-loading').style.display = 'none';
+                document.getElementById('screen-result').style.display = 'flex';
+                
+                // Выводим текст расклада
+                document.getElementById('readingText').innerText = data.reading;
+                
+                // Меняем эмодзи на картах
+                const cardsElements = document.querySelectorAll('.tarot-card');
+                cardsElements[0].innerText = "🌑";
+                cardsElements[1].innerText = "☀️";
+                cardsElements[2].innerText = "🌙";
+            })
+            .catch(err => {
+                tg.showAlert("Ошибка соединения с сервером.");
+                document.getElementById('screen-loading').style.display = 'none';
+                document.getElementById('screen-welcome').style.display = 'flex';
+                console.error(err);
+            });
+        }
 
                 // Показываем результат
                 document.getElementById('screen-loading').style.display = 'none';
