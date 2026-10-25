@@ -302,26 +302,6 @@
             });
         }
 
-                // Показываем результат
-                document.getElementById('screen-loading').style.display = 'none';
-                document.getElementById('screen-result').style.display = 'flex';
-                
-                // Выводим текст расклада
-                document.getElementById('readingText').innerText = data.reading;
-                
-                // Меняем эмодзи на картах (для красоты)
-                const cardsElements = document.querySelectorAll('.tarot-card');
-                cardsElements[0].innerText = "🌑"; // Смерть
-                cardsElements[1].innerText = "☀️"; // Солнце
-                cardsElements[2].innerText = "🌙"; // Луна
-            })
-            .catch(err => {
-                tg.showAlert("Ошибка соединения с сервером.");
-                document.getElementById('screen-loading').style.display = 'none';
-                document.getElementById('screen-welcome').style.display = 'flex';
-            });
-        }
-
         function sendChatMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
