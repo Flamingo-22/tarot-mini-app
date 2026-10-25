@@ -14,7 +14,6 @@
             --gold: #d4af37;
             --gold-light: #f3e5ab;
             --text: #e0d8ec;
-            --purple: #4a2c6d;
             --msg-user: #2e1a47;
             --msg-bot: rgba(74, 44, 109, 0.5);
         }
@@ -59,7 +58,6 @@
             z-index: 2;
         }
 
-        /* ЭКРАН ПРИВЕТСТВИЯ */
         #screen-welcome {
             display: flex;
             flex-direction: column;
@@ -113,7 +111,6 @@
         }
         .btn:active { transform: scale(0.98); }
 
-        /* АНИМАЦИЯ ЗАГРУЗКИ */
         #screen-loading { display: none; text-align: center; padding-top: 100px; }
         .spinner {
             width: 80px; height: 80px;
@@ -129,7 +126,6 @@
         .loading-text { font-size: 14px; color: var(--gold-light); letter-spacing: 1px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-        /* ЭКРАН РЕЗУЛЬТАТА И ЧАТА */
         #screen-result { display: none; flex-direction: column; height: 100%; }
         
         .cards-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
@@ -161,7 +157,6 @@
             max-height: 40vh;
         }
 
-        /* ЧАТ */
         .chat-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .chat-messages { 
             display: flex; flex-direction: column; gap: 10px; 
@@ -189,7 +184,6 @@
     <div class="stars"></div>
 
     <div class="container">
-        <!-- ЭКРАН 1: Ввод вопроса -->
         <div id="screen-welcome">
             <div class="crystal-ball">🔮</div>
             <h1>Мистическое Таро</h1>
@@ -203,13 +197,11 @@
             <button class="btn" onclick="makeFortune()">Сделать расклад</button>
         </div>
 
-        <!-- ЭКРАН 2: Загрузка -->
         <div id="screen-loading">
             <div class="spinner"></div>
             <div class="loading-text">Духи карт слушают вас...</div>
         </div>
 
-        <!-- ЭКРАН 3: Результат и Чат -->
         <div id="screen-result">
             <div class="cards-display" id="cardsDisplay">
                 <div class="tarot-card">🃏</div>
@@ -230,35 +222,26 @@
     </div>
 
     <script>
-        // Инициализация Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть на весь экран
+        tg.expand();
 
-        // Данные пользователя (берем из Telegram)
         const user = tg.initDataUnsafe?.user || { id: 123456789, first_name: "Гость" };
-        
-        // Массив карт для рандома
         const allCards = ["Смерть", "Солнце", "Луна", "Влюбленные", "Башня", "Звезда", "Императрица", "Колесо Фортуны", "Шут", "Маг"];
-
-        // Базовый URL нашего сервера на Render (замени на свой, когда получишь)
         const API_URL = "https://tarot-server-16jh.onrender.com"; 
 
-                function makeFortune() {
+        function makeFortune() {
             const question = document.getElementById('questionInput').value.trim();
             if (!question) {
                 tg.showAlert("Напишите ваш вопрос.");
                 return;
             }
 
-            // Показываем экран загрузки
             document.getElementById('screen-welcome').style.display = 'none';
             document.getElementById('screen-loading').style.display = 'block';
 
-            // Выбираем 3 случайные карты
             const shuffled = allCards.sort(() => 0.5 - Math.random());
             const selectedCards = shuffled.slice(0, 3);
 
-            // Отправляем запрос на наш сервер
             fetch(`${API_URL}/api/fortune`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -271,7 +254,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                // ВЫВОДИМ ОТВЕТ СЕРВЕРА НА ЭКРАН
                 tg.showAlert("Ответ сервера: " + JSON.stringify(data));
 
                 if (data.status === 'error') {
@@ -281,14 +263,10 @@
                     return;
                 }
 
-                // Показываем результат
                 document.getElementById('screen-loading').style.display = 'none';
                 document.getElementById('screen-result').style.display = 'flex';
-                
-                // Выводим текст расклада
                 document.getElementById('readingText').innerText = data.reading;
                 
-                // Меняем эмодзи на картах
                 const cardsElements = document.querySelectorAll('.tarot-card');
                 cardsElements[0].innerText = "🌑";
                 cardsElements[1].innerText = "☀️";
@@ -307,11 +285,9 @@
             const text = input.value.trim();
             if (!text) return;
 
-            // Добавляем сообщение пользователя
             addMessage(text, 'user');
             input.value = '';
 
-            // Показываем "печатает..."
             const chatMessages = document.getElementById('chatMessages');
             const typingDiv = document.createElement('div');
             typingDiv.className = 'message msg-bot';
@@ -320,7 +296,6 @@
             chatMessages.appendChild(typingDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Отправляем на сервер
             fetch(`${API_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
