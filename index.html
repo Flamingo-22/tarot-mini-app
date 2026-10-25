@@ -1,64 +1,353 @@
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Мистическое Таро</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #1a0b2e; color: white; text-align: center; font-family: sans-serif; }
-        #fortune-teller { font-size: 100px; margin: 20px; animation: float 3s infinite ease-in-out; }
-        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;600&display=swap');
+
+        :root {
+            --bg: #0a0514;
+            --card-bg: rgba(26, 14, 46, 0.7);
+            --gold: #d4af37;
+            --gold-light: #f3e5ab;
+            --text: #e0d8ec;
+            --purple: #4a2c6d;
+            --msg-user: #2e1a47;
+            --msg-bot: rgba(74, 44, 109, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
         
-        .loading { display: none; font-size: 20px; margin-top: 20px; }
-        .cards-container { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
-        .card { width: 80px; height: 120px; background: #4a2c6d; border-radius: 8px; border: 1px solid gold; display: none; }
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(74, 44, 109, 0.3), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(26, 14, 46, 0.5), transparent 25%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            background-image: radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 160px 120px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.3;
+            animation: twinkle 5s infinite;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+
+        h1, h2, h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 600; text-align: center; }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ЭКРАН ПРИВЕТСТВИЯ */
+        #screen-welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+        }
+        
+        .crystal-ball {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.6));
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        .welcome-text { font-size: 16px; margin-bottom: 30px; opacity: 0.8; line-height: 1.6; }
+        
+        .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
+        .input-group label { font-size: 12px; color: var(--gold-light); margin-bottom: 8px; display: block; letter-spacing: 1px;}
+        
+        textarea {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            color: white;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            transition: border 0.3s;
+        }
+        textarea:focus { border-color: var(--gold); }
+
+        .btn {
+            background: linear-gradient(135deg, #b8945a 0%, #6b4c1e 100%);
+            color: #fff;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+
+        /* АНИМАЦИЯ ЗАГРУЗКИ */
+        #screen-loading { display: none; text-align: center; padding-top: 100px; }
+        .spinner {
+            width: 80px; height: 80px;
+            border: 3px solid transparent;
+            border-top-color: var(--gold);
+            border-bottom-color: var(--gold);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            animation: spin 1.5s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .loading-text { font-size: 14px; color: var(--gold-light); letter-spacing: 1px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* ЭКРАН РЕЗУЛЬТАТА И ЧАТА */
+        #screen-result { display: none; flex-direction: column; height: 100%; }
+        
+        .cards-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tarot-card {
+            width: 80px; height: 130px;
+            background: linear-gradient(135deg, #1a0b2e 0%, #4a2c6d 100%);
+            border: 1px solid var(--gold);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation: flipIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+        }
+        .tarot-card:nth-child(1) { animation-delay: 0.2s; }
+        .tarot-card:nth-child(2) { animation-delay: 0.4s; }
+        .tarot-card:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes flipIn { 0% { transform: rotateY(90deg); opacity: 0; } 100% { transform: rotateY(0); opacity: 1; } }
+
+        .reading-box {
+            background: var(--card-bg);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 40vh;
+        }
+
+        /* ЧАТ */
+        .chat-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .chat-messages { 
+            display: flex; flex-direction: column; gap: 10px; 
+            max-height: 35vh; overflow-y: auto; padding-right: 5px;
+        }
+        
+        .message { padding: 12px 16px; border-radius: 12px; font-size: 13px; line-height: 1.5; max-width: 85%; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .msg-user { background: var(--msg-user); align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-bot { background: var(--msg-bot); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid rgba(212, 175, 55, 0.1); }
+
+        .chat-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
+        .chat-input {
+            flex: 1; background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 20px; padding: 12px 16px; color: white; outline: none; font-size: 14px;
+        }
+        .chat-send {
+            background: var(--gold); border: none; border-radius: 50%; width: 44px; height: 44px;
+            color: var(--bg); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
-    <div id="fortune-teller">🧙‍♀️</div>
-    
-    <!-- Экран приветствия -->
-    <div id="welcome">
-        <p>Задай свой вопрос и нажми кнопку</p>
-        <button onclick="startFortune()" style="padding: 10px 20px; font-size: 18px; background: gold; border: none; border-radius: 5px; cursor: pointer;">Гадать</button>
-    </div>
+    <div class="stars"></div>
 
-    <!-- Анимация загрузки -->
-    <div id="loading" class="loading">✨ Гадалка смотрит в карты... ✨</div>
+    <div class="container">
+        <!-- ЭКРАН 1: Ввод вопроса -->
+        <div id="screen-welcome">
+            <div class="crystal-ball">🔮</div>
+            <h1>Мистическое Таро</h1>
+            <p class="welcome-text">Загадайте вопрос, и карты дадут вам ответ.</p>
+            
+            <div class="input-group">
+                <label>ВАШ ВОПРОС</label>
+                <textarea id="questionInput" rows="3" placeholder="Что меня ждет в ближайшем будущем?"></textarea>
+            </div>
+            
+            <button class="btn" onclick="makeFortune()">Сделать расклад</button>
+        </div>
 
-    <!-- Карты -->
-    <div id="cards" class="cards-container">
-        <div class="card" id="card1"></div>
-        <div class="card" id="card2"></div>
-        <div class="card" id="card3"></div>
+        <!-- ЭКРАН 2: Загрузка -->
+        <div id="screen-loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Духи карт слушают вас...</div>
+        </div>
+
+        <!-- ЭКРАН 3: Результат и Чат -->
+        <div id="screen-result">
+            <div class="cards-display" id="cardsDisplay">
+                <div class="tarot-card">🃏</div>
+                <div class="tarot-card">🃏</div>
+                <div class="tarot-card">🃏</div>
+            </div>
+
+            <div class="reading-box" id="readingText"></div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-wrap">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Задайте уточняющий вопрос...">
+                    <button class="chat-send" onclick="sendChatMessage()">➤</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Инициализация Telegram
-        Telegram.WebApp.ready();
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть на весь экран
+
+        // Данные пользователя (берем из Telegram)
+        const user = tg.initDataUnsafe?.user || { id: 123456789, first_name: "Гость" };
         
-        function startFortune() {
-            // Скрываем приветствие, показываем загрузку
-            document.getElementById('welcome').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-            
-            // Имитация задержки (гадалка "думает")
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-                showCards();
-            }, 3000); // 3 секунды
+        // Массив карт для рандома
+        const allCards = ["Смерть", "Солнце", "Луна", "Влюбленные", "Башня", "Звезда", "Императрица", "Колесо Фортуны", "Шут", "Маг"];
+
+        // Базовый URL нашего сервера на Render (замени на свой, когда получишь)
+        const API_URL = "https://tarot-server-xxxx.onrender.com"; 
+
+        function makeFortune() {
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) {
+                tg.showAlert("Напишите ваш вопрос.");
+                return;
+            }
+
+            // Показываем экран загрузки
+            document.getElementById('screen-welcome').style.display = 'none';
+            document.getElementById('screen-loading').style.display = 'block';
+
+            // Выбираем 3 случайные карты
+            const shuffled = allCards.sort(() => 0.5 - Math.random());
+            const selectedCards = shuffled.slice(0, 3);
+
+            // Отправляем запрос на наш сервер
+            fetch(`${API_URL}/api/fortune`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    user_name: user.first_name,
+                    question: question,
+                    cards: selectedCards
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    tg.showAlert(data.message);
+                    document.getElementById('screen-loading').style.display = 'none';
+                    document.getElementById('screen-welcome').style.display = 'flex';
+                    return;
+                }
+
+                // Показываем результат
+                document.getElementById('screen-loading').style.display = 'none';
+                document.getElementById('screen-result').style.display = 'flex';
+                
+                // Выводим текст расклада
+                document.getElementById('readingText').innerText = data.reading;
+                
+                // Меняем эмодзи на картах (для красоты)
+                const cardsElements = document.querySelectorAll('.tarot-card');
+                cardsElements[0].innerText = "🌑"; // Смерть
+                cardsElements[1].innerText = "☀️"; // Солнце
+                cardsElements[2].innerText = "🌙"; // Луна
+            })
+            .catch(err => {
+                tg.showAlert("Ошибка соединения с сервером.");
+                document.getElementById('screen-loading').style.display = 'none';
+                document.getElementById('screen-welcome').style.display = 'flex';
+            });
         }
 
-        function showCards() {
-            // Здесь можно рандомно выбирать картинки для карт
-            const cards = document.querySelectorAll('.card');
-            cards.forEach((card, index) => {
-                setTimeout(() => {
-                    card.style.display = 'block';
-                    // Сюда можно вставить логику выбора картинки (например, card.style.backgroundImage = 'url(...)')
-                }, index * 300); // Карты появляются по очереди
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Добавляем сообщение пользователя
+            addMessage(text, 'user');
+            input.value = '';
+
+            // Показываем "печатает..."
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message msg-bot';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerText = '...';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Отправляем на сервер
+            fetch(`${API_URL}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    user_name: user.first_name,
+                    text: text
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('typingIndicator').remove();
+                if (data.status === 'error') {
+                    addMessage("Для чата нужно 3 токена. Пополните баланс.", 'bot');
+                } else {
+                    addMessage(data.reply, 'bot');
+                }
+            })
+            .catch(err => {
+                document.getElementById('typingIndicator').remove();
+                addMessage("Ошибка соединения.", 'bot');
             });
+        }
+
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message msg-${sender}`;
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     </script>
 </body>
