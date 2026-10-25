@@ -229,19 +229,22 @@
         const allCards = ["Смерть", "Солнце", "Луна", "Влюбленные", "Башня", "Звезда", "Императрица", "Колесо Фортуны", "Шут", "Маг"];
         const API_URL = "https://tarot-server-16jh.onrender.com"; 
 
-        function makeFortune() {
+                function makeFortune() {
             const question = document.getElementById('questionInput').value.trim();
             if (!question) {
-                tg.showAlert("Напишите ваш вопрос.");
+                alert("Напишите ваш вопрос.");
                 return;
             }
 
+            // Показываем экран загрузки
             document.getElementById('screen-welcome').style.display = 'none';
             document.getElementById('screen-loading').style.display = 'block';
 
+            // Выбираем 3 случайные карты
             const shuffled = allCards.sort(() => 0.5 - Math.random());
             const selectedCards = shuffled.slice(0, 3);
 
+            // Отправляем запрос на наш сервер
             fetch(`${API_URL}/api/fortune`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -254,28 +257,28 @@
             })
             .then(response => response.json())
             .then(data => {
-                tg.showAlert("Ответ сервера: " + JSON.stringify(data));
-
-                if (data.status === 'error') {
-                    tg.showAlert(data.message);
-                    document.getElementById('screen-loading').style.display = 'none';
-                    document.getElementById('screen-welcome').style.display = 'flex';
-                    return;
-                }
-
+                // Показываем результат
                 document.getElementById('screen-loading').style.display = 'none';
                 document.getElementById('screen-result').style.display = 'flex';
-                document.getElementById('readingText').innerText = data.reading;
                 
+                // Выводим текст расклада или ошибку ПРЯМО В БЛОК
+                if (data.status === 'error') {
+                    document.getElementById('readingText').innerHTML = `<b>Ошибка:</b> ${data.message}`;
+                } else {
+                    document.getElementById('readingText').innerText = data.reading;
+                }
+                
+                // Меняем эмодзи на картах
                 const cardsElements = document.querySelectorAll('.tarot-card');
                 cardsElements[0].innerText = "🌑";
                 cardsElements[1].innerText = "☀️";
                 cardsElements[2].innerText = "🌙";
             })
             .catch(err => {
-                tg.showAlert("Ошибка соединения с сервером.");
+                // Если упала сеть — показываем текст ошибки на экране
                 document.getElementById('screen-loading').style.display = 'none';
                 document.getElementById('screen-welcome').style.display = 'flex';
+                alert("ОШИБКА СЕТИ: " + err.message);
                 console.error(err);
             });
         }
