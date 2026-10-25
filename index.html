@@ -340,7 +340,7 @@
             fetch(`${API_URL}/api/fortune`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, user_name: user.first_name, question: q })
+                body: JSON.stringify({ user_id: user.id, user_name: user.first_name, question: q, cards: [] })
             })
             .then(r => r.json())
             .then(data => {
