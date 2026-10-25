@@ -10,7 +10,6 @@
 
         :root {
             --bg: #06030d;
-            --bg-2: #0f0820;
             --card-bg: rgba(22, 12, 40, 0.85);
             --gold: #d4af37;
             --gold-light: #f5e6b8;
@@ -28,8 +27,7 @@
                         var(--bg);
             color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
@@ -57,7 +55,6 @@
             position: relative; z-index: 2;
         }
 
-        /* ---------- панель ---------- */
         .header-panel {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 18px; background: rgba(22, 12, 40, 0.6);
@@ -74,9 +71,10 @@
         }
         .topup-btn:active { background: rgba(212,175,55,0.35); }
 
-        /* ---------- экраны ---------- */
-        .screen { transition: opacity 0.5s ease, transform 0.5s ease; }
-        .screen.hidden { opacity: 0; pointer-events: none; position: absolute; transform: translateY(10px); }
+        /* Экраны: скрытие через display, анимация — при появлении */
+        .screen { animation: screenIn 0.45s ease; }
+        .screen.hidden { display: none; }
+        @keyframes screenIn { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
 
         #screen-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 55vh; text-align: center; }
 
@@ -109,8 +107,7 @@
         }
         .btn:active { transform: scale(0.97); box-shadow: 0 3px 12px rgba(212,175,55,0.3); }
 
-        /* ---------- загрузка ---------- */
-        #screen-loading { display: none; text-align: center; padding-top: 90px; }
+        #screen-loading { text-align: center; padding-top: 90px; }
         .spinner {
             width: 72px; height: 72px; border: 3px solid transparent;
             border-top-color: var(--gold); border-bottom-color: var(--gold);
@@ -121,8 +118,7 @@
         .loading-text { font-size: 14px; color: var(--gold-light); letter-spacing: 1.2px; animation: pulse 1.8s infinite; }
         @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
-        /* ---------- результат ---------- */
-        #screen-result { display: none; flex-direction: column; }
+        #screen-result { display: flex; flex-direction: column; }
 
         .cards-area {
             display: flex; justify-content: center; gap: 12px;
@@ -133,7 +129,6 @@
             width: 90px; height: 140px; position: relative;
             transform-style: preserve-3d;
             transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
-            opacity: 0;
             animation: cardIn 0.5s ease forwards;
         }
         .tarot-card-wrap:nth-child(1) { animation-delay: 0.15s; }
@@ -171,9 +166,9 @@
             padding: 20px; font-size: 14px; line-height: 1.75;
             margin-bottom: 20px; overflow-y: auto; max-height: 38vh;
             box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            white-space: pre-wrap;
         }
 
-        /* ---------- чат ---------- */
         .chat-section {
             background: var(--card-bg); backdrop-filter: blur(10px);
             border: 1px solid rgba(212,175,55,0.15); border-radius: 16px;
@@ -206,21 +201,20 @@
         }
         .chat-send:active { transform: scale(0.9); }
 
-        /* ---------- модальное окно ---------- */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
             display: none; align-items: center; justify-content: center; z-index: 100;
-            padding: 20px; opacity: 0; transition: opacity 0.3s;
+            padding: 20px;
         }
-        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-overlay.show { display: flex; }
         .modal {
             background: linear-gradient(160deg, #1a0b2e, #0d0618);
             border: 1px solid rgba(212,175,55,0.35); border-radius: 20px;
             padding: 28px 22px; max-width: 340px; width: 100%; text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,175,55,0.1);
-            transform: scale(0.9); transition: transform 0.3s;
+            animation: modalIn 0.3s ease;
         }
-        .modal-overlay.show .modal { transform: scale(1); }
+        @keyframes modalIn { from{opacity:0; transform:scale(0.9)} to{opacity:1; transform:scale(1)} }
         .modal h3 { font-size: 20px; margin-bottom: 16px; }
         .modal .card-num {
             font-family: 'Montserrat', monospace; font-size: 20px; letter-spacing: 3px;
@@ -256,14 +250,13 @@
             <button class="btn" onclick="makeFortune()">Сделать расклад</button>
         </div>
 
-        <div id="screen-loading" class="screen">
+        <div id="screen-loading" class="screen hidden">
             <div class="spinner"></div>
             <div class="loading-text">Духи карт слушают вас...</div>
         </div>
 
-        <div id="screen-result" class="screen">
+        <div id="screen-result" class="screen hidden">
             <div class="cards-area" id="cardsDisplay"></div>
-
             <div class="reading-box" id="readingText"></div>
 
             <div class="chat-section">
@@ -277,7 +270,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно пополнения -->
     <div class="modal-overlay" id="topupModal">
         <div class="modal">
             <h3>💳 Пополнение баланса</h3>
@@ -291,20 +283,28 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
+        // --- Telegram init (безопасно для версий < 7.0) ---
+        const tg = window.Telegram?.WebApp;
+        try { tg?.expand(); } catch (e) { console.warn('expand:', e); }
+        try { tg?.setHeaderColor?.('#06030d'); } catch (e) { /* old API, ok */ }
+        try { tg?.setBackgroundColor?.('#06030d'); } catch (e) { /* old API, ok */ }
 
-        const user = tg.initDataUnsafe?.user || { id: 123456789, first_name: "Гость" };
+        const user = tg?.initDataUnsafe?.user || { id: 123456789, first_name: "Гость" };
         const API_URL = "https://tarot-server-16jh.onrender.com";
 
         // --- баланс ---
         async function fetchBalance() {
+            const el = document.getElementById('balanceDisplay');
             try {
                 const r = await fetch(`${API_URL}/api/balance/${user.id}`);
+                console.log('[balance] HTTP', r.status);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 const d = await r.json();
-                document.getElementById('balanceDisplay').innerText = `💰 ${d.balance} токенов`;
-            } catch { document.getElementById('balanceDisplay').innerText = `💰 —`; }
+                el.innerText = `💰 ${d.balance} токенов`;
+            } catch (e) {
+                console.error('[balance] failed:', e);
+                el.innerText = `💰 —`;
+            }
         }
         fetchBalance();
 
@@ -314,40 +314,57 @@
 
         async function notifyPayment() {
             try {
-                await fetch(`${API_URL}/api/pay`, {
+                const r = await fetch(`${API_URL}/api/pay`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: user.id, user_name: user.first_name })
                 });
+                console.log('[pay] HTTP', r.status);
                 alert("✅ Уведомление отправлено. После проверки баланс будет зачислен.");
                 hideTopupModal();
-            } catch { alert("Ошибка отправки. Попробуйте позже."); }
+            } catch (e) {
+                console.error('[pay] failed:', e);
+                alert("Ошибка отправки. Попробуйте позже.");
+            }
         }
 
         // --- расклад ---
-        function makeFortune() {
+        async function makeFortune() {
             const q = document.getElementById('questionInput').value.trim();
             if (!q) { alert("Напишите ваш вопрос."); return; }
 
             const welcome = document.getElementById('screen-welcome');
             const loading = document.getElementById('screen-loading');
-            const result = document.getElementById('screen-result');
+            const result  = document.getElementById('screen-result');
 
             welcome.classList.add('hidden');
-            loading.style.display = 'block';
+            loading.classList.remove('hidden');
 
-            fetch(`${API_URL}/api/fortune`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, user_name: user.first_name, question: q, cards: [] })
-            })
-            .then(r => r.json())
-            .then(data => {
-                loading.style.display = 'none';
+            try {
+                const r = await fetch(`${API_URL}/api/fortune`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        user_name: user.first_name,
+                        question: q,
+                        cards: []          // <- важно: сервер принимает это поле
+                    })
+                });
+
+                console.log('[fortune] HTTP', r.status);
+                const raw = await r.text();
+                console.log('[fortune] body:', raw);
+
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${raw.slice(0,200)}`);
+
+                const data = JSON.parse(raw);
+                loading.classList.add('hidden');
 
                 if (data.status === 'error') {
                     result.classList.remove('hidden');
-                    document.getElementById('readingText').innerHTML = `<b style="color:#ff6b6b">${data.message}</b>`;
+                    document.getElementById('readingText').innerHTML =
+                        `<b style="color:#ff6b6b">${data.message}</b>`;
                     setTimeout(() => {
                         result.classList.add('hidden');
                         welcome.classList.remove('hidden');
@@ -356,7 +373,7 @@
                 }
 
                 result.classList.remove('hidden');
-                document.getElementById('readingText').innerText = data.reading;
+                document.getElementById('readingText').innerText = data.reading || '';
                 if (data.new_balance !== undefined) {
                     document.getElementById('balanceDisplay').innerText = `💰 ${data.new_balance} токенов`;
                 }
@@ -364,30 +381,32 @@
                 // карты с 3D-переворотом
                 const area = document.getElementById('cardsDisplay');
                 area.innerHTML = '';
-                (data.cards || []).forEach((card, i) => {
+                const cards = Array.isArray(data.cards) ? data.cards : [];
+                console.log('[fortune] cards:', cards);
+
+                cards.forEach((card, i) => {
                     const wrap = document.createElement('div');
                     wrap.className = 'tarot-card-wrap';
                     wrap.innerHTML = `
                         <div class="card-face card-back">✦</div>
                         <div class="card-face card-front">
-                            <img src="${card.image}" alt="${card.name}" loading="lazy" onerror="this.style.display='none'">
+                            <img src="${card.image}" alt="${card.name}" loading="lazy"
+                                 onerror="console.warn('img failed', '${card.image}'); this.style.opacity='0.15';">
                             <div class="card-name">${card.name}</div>
-                        </div>
-                    `;
+                        </div>`;
                     area.appendChild(wrap);
-                    // переворот с задержкой
                     setTimeout(() => wrap.classList.add('flipped'), 600 + i * 250);
                 });
-            })
-            .catch(() => {
-                loading.style.display = 'none';
+            } catch (e) {
+                console.error('[fortune] failed:', e);
+                loading.classList.add('hidden');
                 welcome.classList.remove('hidden');
-                alert("Ошибка сети. Попробуйте снова.");
-            });
+                alert("Ошибка сети: " + e.message);
+            }
         }
 
         // --- чат ---
-        function sendChatMessage() {
+        async function sendChatMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if (!text) return;
@@ -403,13 +422,15 @@
             box.appendChild(typing);
             box.scrollTop = box.scrollHeight;
 
-            fetch(`${API_URL}/api/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, user_name: user.first_name, text })
-            })
-            .then(r => r.json())
-            .then(data => {
+            try {
+                const r = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id, user_name: user.first_name, text })
+                });
+                console.log('[chat] HTTP', r.status);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const data = await r.json();
                 document.getElementById('typing')?.remove();
                 if (data.status === 'error') addMsg(data.message, 'bot');
                 else {
@@ -418,11 +439,11 @@
                         document.getElementById('balanceDisplay').innerText = `💰 ${data.new_balance} токенов`;
                     }
                 }
-            })
-            .catch(() => {
+            } catch (e) {
+                console.error('[chat] failed:', e);
                 document.getElementById('typing')?.remove();
                 addMsg("Ошибка соединения.", 'bot');
-            });
+            }
         }
 
         function addMsg(text, sender) {
@@ -434,7 +455,6 @@
             box.scrollTop = box.scrollHeight;
         }
 
-        // поддержка Enter
         document.getElementById('chatInput')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
         });
