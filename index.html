@@ -58,12 +58,41 @@
             z-index: 2;
         }
 
+        /* НОВАЯ ПАНЕЛЬ С БАЛАНСОМ И РЕФЕРАЛКОЙ */
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: rgba(26, 14, 46, 0.4);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        .balance-badge {
+            font-size: 14px;
+            color: var(--gold);
+            font-weight: 600;
+        }
+        .invite-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .invite-btn:active { background: rgba(212, 175, 55, 0.2); }
+
         #screen-welcome {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 80vh;
+            min-height: 60vh;
             text-align: center;
         }
         
@@ -135,10 +164,14 @@
             border: 1px solid var(--gold);
             border-radius: 6px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 30px;
+            font-size: 11px; /* Уменьшили шрифт, чтобы влезли названия карт */
+            text-align: center;
+            padding: 5px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             animation: flipIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             opacity: 0;
+            color: var(--gold-light);
+            line-height: 1.2;
         }
         .tarot-card:nth-child(1) { animation-delay: 0.2s; }
         .tarot-card:nth-child(2) { animation-delay: 0.4s; }
@@ -184,6 +217,12 @@
     <div class="stars"></div>
 
     <div class="container">
+        <!-- ПАНЕЛЬ С БАЛАНСОМ -->
+        <div class="header-panel">
+            <div class="balance-badge" id="balanceDisplay">💰 ...</div>
+            <a href="#" class="invite-btn" id="inviteLink">🎁 Пригласить друга</a>
+        </div>
+
         <div id="screen-welcome">
             <div class="crystal-ball">🔮</div>
             <h1>Мистическое Таро</h1>
@@ -204,9 +243,9 @@
 
         <div id="screen-result">
             <div class="cards-display" id="cardsDisplay">
-                <div class="tarot-card">🃏</div>
-                <div class="tarot-card">🃏</div>
-                <div class="tarot-card">🃏</div>
+                <div class="tarot-card">...</div>
+                <div class="tarot-card">...</div>
+                <div class="tarot-card">...</div>
             </div>
 
             <div class="reading-box" id="readingText"></div>
@@ -226,25 +265,37 @@
         tg.expand();
 
         const user = tg.initDataUnsafe?.user || { id: 123456789, first_name: "Гость" };
-        const allCards = ["Смерть", "Солнце", "Луна", "Влюбленные", "Башня", "Звезда", "Императрица", "Колесо Фортуны", "Шут", "Маг"];
         const API_URL = "https://tarot-server-16jh.onrender.com"; 
 
-                function makeFortune() {
+        // --- НАСТРОЙКА РЕФЕРАЛЬНОЙ ССЫЛКИ ---
+        // ВАЖНО: Замени "ВАШ_БОТ_ТУТ" на юзернейм твоего бота (без @)
+        const BOT_USERNAME = "TaroMombot"; 
+        document.getElementById('inviteLink').href = `https://t.me/share/url?url=https://t.me/${BOT_USERNAME}?start=ref_${user.id}&text=Погадай на Таро!`;
+
+        // --- ЗАГРУЗКА БАЛАНСА ---
+        async function fetchBalance() {
+            try {
+                const response = await fetch(`${API_URL}/api/balance/${user.id}`);
+                const data = await response.json();
+                document.getElementById('balanceDisplay').innerText = `💰 ${data.balance} токенов`;
+            } catch (e) {
+                document.getElementById('balanceDisplay').innerText = `💰 Ошибка`;
+            }
+        }
+        fetchBalance();
+
+        // --- РАСКЛАД ---
+        function makeFortune() {
             const question = document.getElementById('questionInput').value.trim();
             if (!question) {
                 alert("Напишите ваш вопрос.");
                 return;
             }
 
-            // Показываем экран загрузки
             document.getElementById('screen-welcome').style.display = 'none';
             document.getElementById('screen-loading').style.display = 'block';
 
-            // Выбираем 3 случайные карты
-            const shuffled = allCards.sort(() => 0.5 - Math.random());
-            const selectedCards = shuffled.slice(0, 3);
-
-            // Отправляем запрос на наш сервер
+            // Отправляем запрос без карт, чтобы сервер сам выбрал 3 из 78
             fetch(`${API_URL}/api/fortune`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -252,37 +303,41 @@
                     user_id: user.id,
                     user_name: user.first_name,
                     question: question,
-                    cards: selectedCards
+                    cards: [] 
                 })
             })
             .then(response => response.json())
             .then(data => {
-                // Показываем результат
                 document.getElementById('screen-loading').style.display = 'none';
                 document.getElementById('screen-result').style.display = 'flex';
                 
-                // Выводим текст расклада или ошибку ПРЯМО В БЛОК
                 if (data.status === 'error') {
-                    document.getElementById('readingText').innerHTML = `<b>Ошибка:</b> ${data.message}`;
-                } else {
-                    document.getElementById('readingText').innerText = data.reading;
-                }
+                    document.getElementById('readingText').innerHTML = `<b style="color: #ff6b6b;">${data.message}</b>`;
+                    // Возвращаем экран, если нет токенов
+                    setTimeout(() => {
+                        document.getElementById('screen-welcome').style.display = 'flex';
+                        document.getElementById('screen-result').style.display = 'none';
+                    }, 3000);
+                    return;
+                } 
                 
-                // Меняем эмодзи на картах
-                const cardsElements = document.querySelectorAll('.tarot-card');
-                cardsElements[0].innerText = "🌑";
-                cardsElements[1].innerText = "☀️";
-                cardsElements[2].innerText = "🌙";
+                document.getElementById('readingText').innerText = data.reading;
+                
+                // Обновляем баланс на экране
+                if (data.new_balance !== undefined) {
+                    document.getElementById('balanceDisplay').innerText = `💰 ${data.new_balance} токенов`;
+                }
+
+                // TODO: Сюда можно добавить логику вывода названий карт, если сервер их вернет
             })
             .catch(err => {
-                // Если упала сеть — показываем текст ошибки на экране
                 document.getElementById('screen-loading').style.display = 'none';
                 document.getElementById('screen-welcome').style.display = 'flex';
                 alert("ОШИБКА СЕТИ: " + err.message);
-                console.error(err);
             });
         }
 
+        // --- ЧАТ ---
         function sendChatMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
@@ -312,9 +367,12 @@
             .then(data => {
                 document.getElementById('typingIndicator').remove();
                 if (data.status === 'error') {
-                    addMessage("Для чата нужно 3 токена. Пополните баланс.", 'bot');
+                    addMessage(data.message, 'bot');
                 } else {
                     addMessage(data.reply, 'bot');
+                    if (data.new_balance !== undefined) {
+                        document.getElementById('balanceDisplay').innerText = `💰 ${data.new_balance} токенов`;
+                    }
                 }
             })
             .catch(err => {
