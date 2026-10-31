@@ -66,30 +66,27 @@
             position: relative; z-index: 2;
         }
 
+        /* 🔮 Шапка: только баланс, по центру, без кнопки пополнения */
         .header-panel {
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: center; align-items: center;
             margin-bottom: 20px;
             background: linear-gradient(135deg, rgba(58, 28, 92, 0.6), rgba(28, 14, 48, 0.7));
             backdrop-filter: blur(14px);
-            padding: 11px 14px; border-radius: 16px;
+            padding: 11px 18px; border-radius: 16px;
             border: 1px solid rgba(212, 175, 55, 0.25);
             box-shadow: 0 6px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(212,175,55,0.1);
         }
-        .balance-badge { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--gold-light); font-weight: 600; letter-spacing: 0.4px; }
+        .balance-badge {
+            display: flex; align-items: center; gap: 9px;
+            font-size: 15px; color: var(--gold-light);
+            font-weight: 600; letter-spacing: 0.6px;
+        }
         .balance-badge .coin {
-            width: 20px; height: 20px; border-radius: 50%;
+            width: 22px; height: 22px; border-radius: 50%;
             background: radial-gradient(circle at 35% 30%, #fff4c2, #d4af37 55%, #8a6d1f);
-            box-shadow: 0 0 10px rgba(212,175,55,0.6);
+            box-shadow: 0 0 12px rgba(212,175,55,0.7);
             display: inline-block;
         }
-        .topup-btn {
-            background: linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.08));
-            border: 1px solid var(--gold); color: var(--gold-light);
-            padding: 7px 15px; border-radius: 22px; font-size: 12px;
-            cursor: pointer; transition: all 0.25s; font-weight: 600;
-            box-shadow: 0 2px 10px rgba(212,175,55,0.15);
-        }
-        .topup-btn:active { background: rgba(212,175,55,0.4); transform: scale(0.96); }
 
         .screen { animation: screenIn 0.5s ease; }
         .screen.hidden { display: none; }
@@ -147,7 +144,6 @@
             padding: 6px 0;
         }
 
-        /* 🃏 ИСПРАВЛЕННАЯ АНИМАЦИЯ КАРТ (БЕЗ 3D-ЛОМКИ) */
         .tarot-card-wrap {
             width: 100px; height: 160px; position: relative;
             perspective: 1000px;
@@ -164,11 +160,9 @@
             transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
             transform-style: preserve-3d;
         }
-        /* При добавлении класса flipped - переворачиваем */
         .tarot-card-wrap.flipped .card-inner {
             transform: rotateY(180deg);
         }
-        /* Свечение при перевороте */
         .tarot-card-wrap.flipped {
             filter: drop-shadow(0 0 22px rgba(212,175,55,0.55)) drop-shadow(0 8px 20px rgba(0,0,0,0.6));
         }
@@ -295,12 +289,12 @@
     <div class="stars-2"></div>
 
     <div class="container">
+        <!-- 🔮 Шапка: только баланс (кнопка пополнения удалена) -->
         <div class="header-panel">
             <div class="balance-badge">
                 <span class="coin"></span>
                 <span id="balanceDisplay">...</span>
             </div>
-            <button class="topup-btn" onclick="showTopupModal()">💳 Пополнить</button>
         </div>
 
         <div id="screen-welcome" class="screen">
@@ -333,18 +327,6 @@
                     <button class="chat-send" onclick="sendChatMessage()">➤</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="topupModal">
-        <div class="modal">
-            <h3>💳 Пополнение баланса</h3>
-            <p>Переведите любую сумму на карту:</p>
-            <div class="card-num">2200 0101 0250 1486</div>
-            <p>1 токен = 10 руб.</p>
-            <p style="font-size:12px; opacity:0.55; margin-top:8px;">После перевода нажмите «Я оплатил» — мы проверим поступление.</p>
-            <button class="btn" onclick="notifyPayment()">✅ Я оплатил</button>
-            <button class="btn close-btn" onclick="hideTopupModal()">Закрыть</button>
         </div>
     </div>
 
@@ -387,26 +369,6 @@
             }
         }
         fetchBalance();
-
-        // --- модальное окно ---
-        function showTopupModal() { document.getElementById('topupModal').classList.add('show'); }
-        function hideTopupModal() { document.getElementById('topupModal').classList.remove('show'); }
-
-        async function notifyPayment() {
-            try {
-                const r = await fetch(`${API_URL}/api/pay`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user.id, user_name: user.first_name })
-                });
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                alert("✅ Уведомление отправлено. После проверки баланс будет зачислен.");
-                hideTopupModal();
-            } catch (e) {
-                console.error('[pay] failed:', e);
-                alert("Ошибка отправки. Попробуйте позже.");
-            }
-        }
 
         // --- расклад ---
         async function makeFortune() {
@@ -458,7 +420,7 @@
                     document.getElementById('balanceDisplay').innerText = `${data.new_balance} токенов`;
                 }
 
-                // карты с исправленной анимацией
+                // карты с 3D-анимацией
                 const area = document.getElementById('cardsDisplay');
                 area.innerHTML = '';
                 const cards = Array.isArray(data.cards) ? data.cards : [];
@@ -467,8 +429,7 @@
                     const wrap = document.createElement('div');
                     wrap.className = 'tarot-card-wrap';
                     const imgSrc = card.image || CARD_BACK_PLACEHOLDER;
-                    
-                    // Оборачиваем в card-inner для 3D
+
                     wrap.innerHTML = `
                         <div class="card-inner">
                             <div class="card-face card-back">✦</div>
@@ -479,8 +440,7 @@
                             </div>
                         </div>`;
                     area.appendChild(wrap);
-                    
-                    // Даем браузеру отрисовать элемент и запускаем переворот
+
                     setTimeout(() => wrap.classList.add('flipped'), 600 + i * 260);
                 });
             } catch (e) {
